@@ -6,7 +6,6 @@ import os
 import pandas as pd
 import tkinter as tk
 from tkinter import filedialog, messagebox
-from pandastable import Table
 
 
 def load_model(path):
@@ -69,21 +68,55 @@ def start(file, folder):
             messagebox.showerror("Error", "Oops, there was an error loading the model")
         if model is not None:
             df = predict(model, folder.get())
-            table = Table(frame2, dataframe=df, showtoolbar=True, showstatusbar=True)
-            table.show()
+            present_table(df)
+
+
+def save_to_csv(df):
+    f = filedialog.asksaveasfile(mode='w', defaultextension=".csv")
+    if f is None:  # asksaveasfile return `None` if dialog closed with "cancel".
+        return
+    df.to_csv(f, index=None)
+
+
+def present_table(data):
+    tree = tk.ttk.Treeview(frame2, columns=(1, 2, 3), height=frame2.winfo_height(), show="headings")
+    tree.pack(side='left')
+
+    tree.heading(1, text="Image Name")
+    tree.heading(2, text="Prediction")
+    tree.heading(3, text="Definition")
+
+    tree.column(1)
+    tree.column(2)
+    tree.column(3)
+
+    scroll = tk.ttk.Scrollbar(frame2, orient="vertical", command=tree.yview)
+    scroll.pack(side='right', fill='y')
+
+    tree.configure(yscrollcommand=scroll.set)
+
+    for index, row in data.iterrows():
+        tree.insert("", tk.END, values=(row[0], row[1], row[2]))
+    btn_save = tk.Button(frame2, text="Save to CSV", command=lambda: save_to_csv(data))
+    btn_save.pack(side='right')
 
 
 def clear():
+    global frame2
     frame2.destroy()
-
+    frame2 = tk.Frame(window)
+    frame2.pack(side='bottom', fill='both', expand=True)
 
 
 def browse(look_for, var):
-    if look_for == 'd':
-        path = filedialog.askdirectory(parent=window, title='Choose directory')
-    if look_for == 'f':
-        path = filedialog.askopenfile(parent=window, title='Choose a file').name
-    var.set(path)
+    try:
+        if look_for == 'd':
+            path = filedialog.askdirectory(parent=window, title='Choose directory')
+        if look_for == 'f':
+            path = filedialog.askopenfile(parent=window, title='Choose a file').name
+        var.set(path)
+    except:
+        pass
 
 
 window = tk.Tk()
